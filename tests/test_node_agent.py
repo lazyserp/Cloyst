@@ -66,5 +66,41 @@ def test_agent_live_hardware_inspection():
     assert payload.id.startswith("node-")
     assert len(payload.hostname) > 0
     assert payload.ip_address != ""
-    assert payload.total_vram_mb == 4096
+    assert isinstance(payload.total_vram_mb, int)
+    assert payload.total_vram_mb >= 0
+
+
+def test_agent_sample_free_vram():
+    """Verify sample_free_vram_mb returns a non-negative integer."""
+    agent = NodeAgent()
+    free_mb = agent.sample_free_vram_mb()
+    assert isinstance(free_mb, int)
+    assert free_mb >= 0
+
+
+def test_agent_run_daemon_max_iterations():
+    """Verify daemon executes the specified number of cycles and exits cleanly."""
+    import threading
+    agent = NodeAgent(control_plane_url="http://control-plane:8000", node_id="node-test")
+
+    with patch.object(agent, "register", return_value=True) as mock_reg, \
+         patch.object(agent, "send_heartbeat", return_value=True) as mock_hb:
+        agent.run_daemon(interval_seconds=0.01, max_iterations=3)
+        assert mock_reg.call_count == 1
+        assert mock_hb.call_count == 3
+
+
+def test_agent_run_daemon_stop_event():
+    """Verify daemon honors a threading.Event stop signal."""
+    import threading
+    agent = NodeAgent(control_plane_url="http://control-plane:8000", node_id="node-test")
+    stop_event = threading.Event()
+    stop_event.set()  # Stop immediately
+
+    with patch.object(agent, "register", return_value=True) as mock_reg, \
+         patch.object(agent, "send_heartbeat", return_value=True) as mock_hb:
+        agent.run_daemon(interval_seconds=0.01, stop_event=stop_event)
+        # Should exit immediately without hanging
+        assert mock_hb.call_count == 0
+
 

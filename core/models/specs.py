@@ -18,3 +18,13 @@ QWEN_0_5B_SPEC = ModelSpec(
     min_disk_gb=2.0,
     max_context_length=4096,
 )
+
+QWEN_0_7B_SPEC = ModelSpec(
+    id="qwen-2.5-7b-instruct",
+    name="Qwen 2.5 7B Instruct",
+    artifact_path="./storage/models/qwen2.5-7b-instruct",
+    min_vram_mb=5500,  
+    min_disk_gb=6.0,
+    max_context_length=8192,
+    engine_type="ollama"
+)

@@ -2,6 +2,8 @@ import os
 import secrets
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from dotenv import load_dotenv
+
+load_dotenv()
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -126,19 +128,28 @@ def node_heartbeat(node_id: str, request: NodeHeartbeatRequest, db: Session = De
 def list_nodes(db: Session = Depends(get_db)):
     """List all registered nodes and their current status."""
     nodes = db.scalars(select(NodeRecord)).all()
-    return [
-        {
+    now = datetime.now(timezone.utc)
+    result = []
+    for n in nodes:
+        last_hb = n.last_heartbeat
+        if last_hb and last_hb.tzinfo is None:
+            last_hb = last_hb.replace(tzinfo=timezone.utc)
+
+        # Mark node as offline if no heartbeat was received in the last 30 seconds
+        is_stale = last_hb is not None and (now - last_hb).total_seconds() > 30
+        status_val = "offline" if is_stale else n.status
+
+        result.append({
             "id": n.id,
             "hostname": n.hostname,
             "ip_address": n.ip_address,
-            "status": n.status,
+            "status": status_val,
             "gpu_name": n.gpu_name,
             "total_vram_mb": n.total_vram_mb,
             "free_vram_mb": n.free_vram_mb,
-            "last_heartbeat": n.last_heartbeat.isoformat(),
-        }
-        for n in nodes
-    ]
+            "last_heartbeat": n.last_heartbeat.isoformat() if n.last_heartbeat else None,
+        })
+    return result
 
 
 @app.post("/api/v1/api-keys", status_code=status.HTTP_201_CREATED, dependencies=[Depends(verify_admin_token)])
@@ -211,11 +222,14 @@ def revoke_api_key(key_id: str, db: Session = Depends(get_db)):
 
 @app.post("/api/v1/projects", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED,dependencies=[Depends(verify_admin_token)])
 def create_project(request: ProjectCreateRequest, db: Session = Depends(get_db)):
+    existing = db.scalar(select(ProjectRecord).where(ProjectRecord.name == request.name))
+    if existing:
+        return existing
     project = ProjectRecord(name=request.name,description=request.description)
     db.add(project)
     db.commit()
     db.refresh(project)
-    
+
     return project
 
 
@@ -334,24 +348,14 @@ def create_deployment(request: DeploymentCreateRequest, db: Session = Depends(ge
                 detail=f"Node '{request.node_id}' not found.",
             )
     else:
-        # Match node by host/IP or auto-create a node record for this remote/local machine
+        # Match node by host/IP
         host = (request.host or "127.0.0.1").strip()
         node = db.scalar(select(NodeRecord).where(NodeRecord.ip_address == host))
         if not node:
-            is_local = host in ["127.0.0.1", "localhost"]
-            node_id = "node-local-pc" if is_local else f"node-{host.replace('.', '-')}"
-            node = NodeRecord(
-                id=node_id,
-                hostname=f"gpu-node-{host}",
-                ip_address=host,
-                gpu_name="NVIDIA GPU Cluster Node" if not is_local else "NVIDIA Local GPU",
-                total_vram_mb=24576 if not is_local else 4096,
-                free_vram_mb=22000 if not is_local else 3500,
-                status="online",
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No registered compute node found for host '{host}'. Please start the Sovra Node Agent on that machine first.",
             )
-            db.add(node)
-            db.commit()
-            db.refresh(node)
 
     # 2. Register or update Model Record
     model = db.get(ModelRecord, request.model_id)

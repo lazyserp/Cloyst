@@ -1,3 +1,4 @@
+import pytest
 import shutil
 import subprocess
 from unittest.mock import MagicMock, patch
@@ -138,13 +139,13 @@ def test_check_nvidia_gpu_driver_error():
         assert "returned an error" in item.message
 
 
+@pytest.mark.skipif(not shutil.which("nvidia-smi"), reason="Live test requires an NVIDIA GPU with nvidia-smi")
 def test_check_nvidia_gpu_live():
-    """Live verification against the host RTX 3050 hardware."""
+    """Live verification against host NVIDIA GPU hardware."""
     item = check_nvidia_gpu(min_vram_mb=2000)
     assert item.name == "nvidia_gpu"
     assert item.passed is True
-    assert "RTX 3050" in item.details["gpu_name"]
-    assert item.details["total_vram_mb"] == 4096
+    assert item.details.get("total_vram_mb", 0) >= 2000
 
 
 # ============================================================================

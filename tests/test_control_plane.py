@@ -317,6 +317,17 @@ def test_audit_logs_endpoint(client_with_test_db: TestClient):
 
 def test_create_and_list_deployments(client_with_test_db: TestClient):
     """Verify deploying a model creates the model, node, and deployment records."""
+    # 0. Register compute node first
+    reg_payload = {
+        "id": "node-local-pc",
+        "hostname": "local-workstation",
+        "ip_address": "127.0.0.1",
+        "gpu_name": "Apple Silicon (Metal GPU / Unified Memory)",
+        "total_vram_mb": 16384,
+        "free_vram_mb": 11000,
+    }
+    client_with_test_db.post("/api/v1/nodes/register", json=reg_payload)
+
     payload = {
         "model_id": "qwen2.5-coder:7b",
         "name": "Qwen 2.5 Coder 7B",
@@ -386,7 +397,18 @@ def test_verify_deployment_endpoint_unreachable(client_with_test_db: TestClient)
 
 
 def test_create_remote_linux_deployment(client_with_test_db: TestClient):
-    """Verify deploying to a remote Linux IP registers a remote NodeRecord and routes properly."""
+    """Verify deploying to a remote Linux IP routes properly when node is registered."""
+    # 0. Register remote cluster node
+    reg_payload = {
+        "id": "node-10-0-1-50",
+        "hostname": "gpu-node-cluster",
+        "ip_address": "10.0.1.50",
+        "gpu_name": "NVIDIA A100-SXM4-80GB",
+        "total_vram_mb": 81920,
+        "free_vram_mb": 75000,
+    }
+    client_with_test_db.post("/api/v1/nodes/register", json=reg_payload)
+
     payload = {
         "model_id": "deepseek-ai/DeepSeek-V3",
         "name": "DeepSeek V3 (Customer Cluster)",
@@ -401,6 +423,20 @@ def test_create_remote_linux_deployment(client_with_test_db: TestClient):
     assert res_list.status_code == 200
     deploys = res_list.json()
     assert any(d["model_id"] == "deepseek-ai/DeepSeek-V3" and d["port"] == 8000 for d in deploys)
+
+
+def test_deploy_unregistered_node_fails(client_with_test_db: TestClient):
+    """Verify deploying to an unknown host without a registered agent fails with HTTP 400."""
+    payload = {
+        "model_id": "meta-llama/Llama-3.1-8B",
+        "name": "Llama 3.1 8B",
+        "engine_type": "vllm",
+        "host": "192.168.99.99",
+        "port": 8000,
+    }
+    res = client_with_test_db.post("/api/v1/deployments", json=payload, headers=ADMIN_HEADERS)
+    assert res.status_code == 400
+    assert "No registered compute node found" in res.json()["detail"]
 
 
 

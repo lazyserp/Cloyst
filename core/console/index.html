@@ -689,8 +689,21 @@
         }
 
         container.innerHTML = nodes.map(node => {
-          const usedVram = node.total_vram_mb - node.free_vram_mb;
-          const pct = node.total_vram_mb > 0 ? Math.round((usedVram / node.total_vram_mb) * 100) : 0;
+          const usedVram = Math.max(0, node.total_vram_mb - node.free_vram_mb);
+          const pct = node.total_vram_mb > 0 ? Math.min(100, Math.round((usedVram / node.total_vram_mb) * 100)) : 0;
+          const isOnline = (node.status || '').toLowerCase() === 'online';
+          const statusBadge = isOnline
+            ? `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
+                ONLINE
+               </span>`
+            : `<span class="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                OFFLINE
+               </span>`;
+
+          const heartbeatStr = node.last_heartbeat ? new Date(node.last_heartbeat).toLocaleTimeString() : 'Never';
+
           return `
             <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
               <div class="flex justify-between items-start">
@@ -698,10 +711,7 @@
                   <div class="font-bold text-white text-base">${node.hostname}</div>
                   <div class="text-xs text-zinc-400 font-mono mt-0.5">${node.ip_address} • ${node.gpu_name || 'Generic GPU'}</div>
                 </div>
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
-                  ${node.status.toUpperCase()}
-                </span>
+                ${statusBadge}
               </div>
 
               <div class="space-y-1.5">
@@ -710,13 +720,13 @@
                   <span>${usedVram} / ${node.total_vram_mb} MB (${pct}%)</span>
                 </div>
                 <div class="w-full bg-zinc-950 rounded-full h-2 overflow-hidden border border-zinc-800">
-                  <div class="bg-gradient-to-r from-violet-600 to-indigo-500 h-2 rounded-full" style="width: ${pct}%"></div>
+                  <div class="bg-gradient-to-r from-violet-600 to-indigo-500 h-2 rounded-full transition-all duration-700 ease-out" style="width: ${pct}%"></div>
                 </div>
               </div>
 
               <div class="text-[11px] text-zinc-500 font-mono flex justify-between pt-1 border-t border-zinc-800/80">
-                <span>Node ID: ${node.id.slice(0, 12)}...</span>
-                <span>Heartbeat: ${new Date(node.last_heartbeat).toLocaleTimeString()}</span>
+                <span>Node ID: ${node.id.slice(0, 14)}...</span>
+                <span>Heartbeat: ${heartbeatStr}</span>
               </div>
             </div>
           `;
