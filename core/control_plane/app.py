@@ -1,5 +1,6 @@
 import os
 import secrets
+import socket
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from dotenv import load_dotenv
 
@@ -33,7 +34,7 @@ from core.db.models import (
 from core.db.session import get_db, init_db
 from core.security.keys import generate_api_key
 
-app = FastAPI(title="Sovra Control Plane", version="0.1.0")
+app = FastAPI(title="Cloyst Control Plane", version="0.1.0")
 init_db()
 
 app.add_middleware(
@@ -46,7 +47,7 @@ app.add_middleware(
 
 load_dotenv()
 
-SOVRA_ADMIN_TOKEN = os.environ.get("SOVRA_ADMIN_TOKEN") or "devkey"
+CLOYST_ADMIN_TOKEN = os.environ.get("CLOYST_ADMIN_TOKEN") or "devkey"
 admin_bearer_scheme = HTTPBearer(auto_error=False)
 
 def verify_admin_token(
@@ -59,7 +60,7 @@ def verify_admin_token(
             detail="Missing Authorization header. Expected 'Bearer <admin_token>'.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    if not secrets.compare_digest(credentials.credentials, SOVRA_ADMIN_TOKEN):
+    if not secrets.compare_digest(credentials.credentials, CLOYST_ADMIN_TOKEN):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Forbidden: Invalid admin token.",
@@ -351,10 +352,19 @@ def create_deployment(request: DeploymentCreateRequest, db: Session = Depends(ge
         # Match node by host/IP
         host = (request.host or "127.0.0.1").strip()
         node = db.scalar(select(NodeRecord).where(NodeRecord.ip_address == host))
+        
+        # If deploying to localhost/default and no literal '127.0.0.1' node exists,
+        # resolve to an active local compute node
+        if not node and host in ["127.0.0.1", "localhost"]:
+            online_nodes = db.scalars(select(NodeRecord).where(NodeRecord.status == "online")).all()
+            if online_nodes:
+                local_h = socket.gethostname().lower().split(".")[0]
+                node = next((n for n in online_nodes if n.hostname.lower().split(".")[0] == local_h), online_nodes[0])
+
         if not node:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"No registered compute node found for host '{host}'. Please start the Sovra Node Agent on that machine first.",
+                detail=f"No registered compute node found for host '{host}'. Please start the Cloyst Node Agent on that machine first.",
             )
 
     # 2. Register or update Model Record
@@ -460,10 +470,10 @@ CONSOLE_FILE_PATH = os.path.abspath(
 @app.get("/", response_class=HTMLResponse)
 @app.get("/console", response_class=HTMLResponse)
 def serve_console():
-    """Serve the Sovra Enterprise Observability & Management Console UI."""
+    """Serve the Cloyst Enterprise Observability & Management Console UI."""
     if not os.path.exists(CONSOLE_FILE_PATH):
         return HTMLResponse(
-            "<h2>Sovra Console is initializing... Please create core/console/index.html</h2>",
+            "<h2>Cloyst Console is initializing... Please create core/console/index.html</h2>",
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
     with open(CONSOLE_FILE_PATH, "r", encoding="utf-8") as f:

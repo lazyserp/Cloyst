@@ -30,7 +30,7 @@ def test_generate_api_key_format():
     """Verify generated keys meet cryptographic format expectations."""
     plain_key, key_hash, prefix = generate_api_key()
 
-    assert plain_key.startswith("sovra_sk_live_")
+    assert plain_key.startswith("cloyst_sk_live_")
     assert len(key_hash) == 64  # SHA-256 produces 64 hex characters
     assert hash_key(plain_key) == key_hash
     assert prefix == plain_key[:16]
@@ -56,7 +56,7 @@ def test_verify_api_key_valid(db_session):
 
 def test_verify_api_key_unknown(db_session):
     """Verify an unknown key returns None without crashing."""
-    verified = verify_api_key("sovra_sk_live_totally_fake_key", db_session)
+    verified = verify_api_key("cloyst_sk_live_totally_fake_key", db_session)
     assert verified is None
 
 

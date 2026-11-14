@@ -9,15 +9,15 @@ from core.db.models import ApiKeyRecord
 def hash_key(raw_key: str) -> str:
     return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
-def generate_api_key(prefix: str = "sovra_sk_live_") -> tuple[str,str,str]:
+def generate_api_key(prefix: str = "cloyst_sk_live_") -> tuple[str,str,str]:
     """
     Generate a cryptographically secure API key.
     
     Returns:
         (plain_key, key_hash, prefix)
-        - plain_key: Shown to the user ONCE (e.g. 'sovra_sk_live_AbCd123...')
+        - plain_key: Shown to the user ONCE (e.g. 'cloyst_sk_live_AbCd123...')
         - key_hash: Stored in the database
-        - prefix: Safe display prefix (e.g. 'sovra_sk_live_AbCd')
+        - prefix: Safe display prefix (e.g. 'cloyst_sk_live_AbCd')
     """
 
     token  = secrets.token_urlsafe(32)

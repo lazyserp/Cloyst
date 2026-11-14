@@ -1,7 +1,7 @@
-"""Sovra Node Agent Client & Daemon.
+"""Cloyst Node Agent Client & Daemon.
 
 Runs on GPU compute nodes (Linux NVIDIA, Apple Silicon, etc.), registers hardware
-specs with the Sovra Control Plane, and publishes continuous heartbeat telemetry.
+specs with the Cloyst Control Plane, and publishes continuous heartbeat telemetry.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ import httpx
 from core.control_plane.schemas import NodeHeartbeatRequest, NodeRegisterRequest
 from core.preflight.checker import run_preflight
 
-logger = logging.getLogger("sovra.agent")
+logger = logging.getLogger("cloyst.agent")
 
 
 def get_live_hardware_telemetry() -> Tuple[str, int, int]:
@@ -135,13 +135,13 @@ class NodeAgent:
     ):
         self.control_plane_url = (
             control_plane_url
-            or os.getenv("SOVRA_CONTROL_PLANE_URL")
+            or os.getenv("CLOYST_CONTROL_PLANE_URL")
             or "http://localhost:8001"
         )
         self.hostname = socket.gethostname()
         self.node_id = (
             node_id
-            or os.getenv("SOVRA_NODE_ID")
+            or os.getenv("CLOYST_NODE_ID")
             or f"node-{self.hostname.lower()}"
         )
         self.ip_address = self._get_local_ip()
@@ -225,7 +225,7 @@ class NodeAgent:
         Handles network dropouts with retry backoff and supports clean cancellation.
         """
         logger.info(
-            "Starting Sovra Node Agent [%s] connecting to %s (interval: %.1fs)",
+            "Starting Cloyst Node Agent [%s] connecting to %s (interval: %.1fs)",
             self.node_id,
             self.control_plane_url,
             interval_seconds,
@@ -279,15 +279,15 @@ class NodeAgent:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Sovra GPU Node Agent Daemon")
+    parser = argparse.ArgumentParser(description="Cloyst GPU Node Agent Daemon")
     parser.add_argument(
         "--url",
-        default=os.getenv("SOVRA_CONTROL_PLANE_URL", "http://localhost:8001"),
-        help="Sovra Control Plane URL (default: http://localhost:8001)",
+        default=os.getenv("CLOYST_CONTROL_PLANE_URL", "http://localhost:8001"),
+        help="Cloyst Control Plane URL (default: http://localhost:8001)",
     )
     parser.add_argument(
         "--node-id",
-        default=os.getenv("SOVRA_NODE_ID", "node-local-pc"),
+        default=os.getenv("CLOYST_NODE_ID", "node-local-pc"),
         help="Unique Node ID (default: node-local-pc)",
     )
     parser.add_argument(

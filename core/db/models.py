@@ -10,7 +10,7 @@ class Base(DeclarativeBase):
 
 
 class NodeRecord(Base):
-    """Represents a physical or virtual GPU compute node managed by Sovra."""
+    """Represents a physical or virtual GPU compute node managed by Cloyst."""
     __tablename__ = "nodes"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -27,7 +27,7 @@ class NodeRecord(Base):
 
 
 class ModelRecord(Base):
-    """Represents an AI model registered in the Sovra platform."""
+    """Represents an AI model registered in the Cloyst platform."""
     __tablename__ = "models"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)  
@@ -65,7 +65,7 @@ class DeploymentRecord(Base):
     )
 
 class ProjectRecord(Base):
-    """Represents an isolated tenant, department, or project in Sovra."""
+    """Represents an isolated tenant, department, or project in Cloyst."""
     __tablename__ = "projects"
 
     id: Mapped[str] = mapped_column(String,primary_key=True,default= lambda: str(uuid.uuid4()),)
@@ -74,7 +74,7 @@ class ProjectRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc),)
 
 class ApiKeyRecord(Base):
-    """Represents an API authentication key for accessing Sovra AI endpoints."""
+    """Represents an API authentication key for accessing Cloyst AI endpoints."""
     __tablename__ = "api_keys"
 
     id: Mapped[str] = mapped_column(String,primary_key=True,default=lambda: str(uuid.uuid4()),)

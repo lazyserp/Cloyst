@@ -24,7 +24,7 @@ def test_create_and_query_node(test_db_session: Session):
     """Verify storing and querying a GPU Node record."""
     node = NodeRecord(
         id="node-rtx3050-01",
-        hostname="sovra-workstation",
+        hostname="cloyst-workstation",
         ip_address="192.168.1.50",
         status="online",
         gpu_name="NVIDIA GeForce RTX 3050 Laptop GPU",
@@ -36,7 +36,7 @@ def test_create_and_query_node(test_db_session: Session):
 
     queried_node = test_db_session.get(NodeRecord, "node-rtx3050-01")
     assert queried_node is not None
-    assert queried_node.hostname == "sovra-workstation"
+    assert queried_node.hostname == "cloyst-workstation"
     assert queried_node.total_vram_mb == 4096
     assert queried_node.status == "online"
     assert queried_node.last_heartbeat is not None

@@ -13,7 +13,7 @@ class VLLMRunner:
     def __init__(self,spec: ModelSpec,port: int = 8000,container_name: str | None = None,gpu_memory_utilization: float = 0.85,) -> None:
         self.spec = spec
         self.port = port
-        self.container_name = container_name or f"sovra-engine-{spec.id}"
+        self.container_name = container_name or f"cloyst-engine-{spec.id}"
         self.gpu_memory_utilization = gpu_memory_utilization
         self.last_error: str | None = None
 
@@ -136,7 +136,7 @@ class VLLMRunner:
 
         while time.monotonic() - start_time < timeout_seconds:
             try:
-                req = urllib.request.Request(health_url, headers={"User-Agent": "Sovra-Agent"})
+                req = urllib.request.Request(health_url, headers={"User-Agent": "Cloyst-Agent"})
                 with urllib.request.urlopen(req, timeout=2) as response:
                     if response.status == 200:
                         return True

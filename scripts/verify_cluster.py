@@ -1,22 +1,28 @@
-"""Sovra Cluster Health & Verification Harness.
+"""Cloyst Cluster Health & Verification Harness.
 
-Validates that a live Sovra cluster (local or remote) is fully operational.
+Validates that a live Cloyst cluster (local or remote) is fully operational.
 
 Usage:
     python scripts/verify_cluster.py [GATEWAY_URL] [CONTROL_PLANE_URL] [ADMIN_TOKEN]
 Example:
-    python scripts/verify_cluster.py http://localhost:8000 http://localhost:8001 sovra-master-secret-2026
+    python scripts/verify_cluster.py http://localhost:8000 http://localhost:8001 cloyst-master-secret-2026
 """
+import os
 import sys
 import httpx
+from dotenv import load_dotenv
+
+load_dotenv()
+
+DEFAULT_ADMIN_TOKEN = os.getenv("CLOYST_ADMIN_TOKEN") or "cloyst"
 
 def run_verification(
     gateway_url: str = "http://localhost:8000",
     cp_url: str = "http://localhost:8001",
-    admin_token: str = "sovra-master-secret-2026",
+    admin_token: str = DEFAULT_ADMIN_TOKEN,
 ):
     print("\n" + "=" * 65)
-    print(" 🚀 SOVRA CLUSTER SMOKE TEST & HEALTH VERIFICATION")
+    print(" 🚀 CLOYST CLUSTER SMOKE TEST & HEALTH VERIFICATION")
     print(f"    Gateway:       {gateway_url}")
     print(f"    Control Plane: {cp_url}")
     print("=" * 65 + "\n")
@@ -28,7 +34,7 @@ def run_verification(
     # 1. Gateway Health Check
     try:
         res = client.get(f"{gateway_url}/health")
-        if res.status_code == 200 and res.json().get("service") == "sovra-gateway":
+        if res.status_code == 200 and res.json().get("service") == "cloyst-gateway":
             print("  [PASS] 1. Gateway Health Check (HTTP 200)")
             passed += 1
         else:
@@ -39,7 +45,7 @@ def run_verification(
     # 2. Control Plane Console UI
     try:
         res = client.get(f"{cp_url}/console")
-        if res.status_code == 200 and "Sovra" in res.text:
+        if res.status_code == 200 and ("Cloyst" in res.text or "CLOYST" in res.text):
             print("  [PASS] 2. Control Plane Web Console UI (HTTP 200)")
             passed += 1
         else:
@@ -113,7 +119,7 @@ def run_verification(
 
     print("\n" + "-" * 65)
     if passed == total:
-        print(f"  🎉 ALL {total}/{total} CLUSTER CHECKS PASSED — SOVRA IS PRODUCTION READY!")
+        print(f"  🎉 ALL {total}/{total} CLUSTER CHECKS PASSED — CLOYST IS PRODUCTION READY!")
     else:
         print(f"  ⚠️  {passed}/{total} CHECKS PASSED. Check failed steps above.")
     print("-" * 65 + "\n")
@@ -122,7 +128,7 @@ def run_verification(
 if __name__ == "__main__":
     gw = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8000"
     cp = sys.argv[2] if len(sys.argv) > 2 else "http://localhost:8001"
-    token = sys.argv[3] if len(sys.argv) > 3 else "sovra-master-secret-2026"
+    token = sys.argv[3] if len(sys.argv) > 3 else DEFAULT_ADMIN_TOKEN
     success = run_verification(gw, cp, token)
     sys.exit(0 if success else 1)
 

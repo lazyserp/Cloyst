@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from core.db.models import Base
 
-DATABASE_URL = os.environ.get("DATABASE_URL") or "sqlite:///./sovra.db"
+DATABASE_URL = os.environ.get("DATABASE_URL") or "sqlite:///./cloyst.db"
 
 # SQLAlchemy 2.0 Engine
 engine = create_engine(

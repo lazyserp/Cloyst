@@ -19,7 +19,7 @@ from core.db.session import get_db, init_db
 from core.gateway.app import app
 from core.security.keys import hash_key
 
-TEST_API_KEY = "sovra_sk_live_valid_test_key_12345"
+TEST_API_KEY = "cloyst_sk_live_valid_test_key_12345"
 AUTH_HEADERS = {"Authorization": f"Bearer {TEST_API_KEY}"}
 
 
@@ -83,7 +83,7 @@ def test_gateway_health(client_with_gateway_db: TestClient):
     """Verify unauthenticated health check endpoint returns 200."""
     response = client_with_gateway_db.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy", "service": "sovra-gateway"}
+    assert response.json() == {"status": "healthy", "service": "cloyst-gateway"}
 
 
 def test_gateway_list_models(client_with_gateway_db: TestClient):
@@ -113,7 +113,7 @@ def test_chat_completions_invalid_auth(client_with_gateway_db: TestClient):
         "model": "qwen-2.5-0.5b-instruct",
         "messages": [{"role": "user", "content": "Hello"}],
     }
-    bad_headers = {"Authorization": "Bearer sovra_sk_live_completely_fake_token"}
+    bad_headers = {"Authorization": "Bearer cloyst_sk_live_completely_fake_token"}
     response = client_with_gateway_db.post(
         "/v1/chat/completions",
         json=payload,
@@ -186,7 +186,7 @@ def test_chat_completions_forward_success_records_telemetry(client_with_gateway_
                 "index": 0,
                 "message": {
                     "role": "assistant",
-                    "content": "Hello from behind dynamic Sovra Gateway!",
+                    "content": "Hello from behind dynamic Cloyst Gateway!",
                 },
                 "finish_reason": "stop",
             }
@@ -281,7 +281,7 @@ def test_chat_completions_rate_limit_exceeded_returns_429(client_with_gateway_db
 
 def test_chat_completions_audit_log_stamps_project_id(client_with_gateway_db: TestClient):
     """Verify inference audit logs record the caller's project_id for tenant telemetry & billing."""
-    project_key_plain = "sovra_sk_live_project_scoped_secret_9999"
+    project_key_plain = "cloyst_sk_live_project_scoped_secret_9999"
     project_headers = {"Authorization": f"Bearer {project_key_plain}"}
 
     with client_with_gateway_db.session_factory() as session:
@@ -385,6 +385,58 @@ def test_chat_completions_streaming_sse_success(client_with_gateway_db: TestClie
         )
         assert log is not None
         assert log.latency_ms > 0
+        assert log.completion_tokens == 2
+        assert log.prompt_tokens > 0
+        assert log.total_tokens == log.prompt_tokens + log.completion_tokens
+
+
+def test_chat_completions_streaming_sse_with_usage_chunk(client_with_gateway_db: TestClient):
+    """Verify stream=True accurately parses backend-provided usage token metrics."""
+    payload = {
+        "model": "qwen-2.5-0.5b-instruct",
+        "messages": [{"role": "user", "content": "Stream with usage."}],
+        "stream": True,
+    }
+
+    sse_chunks = [
+        b'data: {"choices": [{"delta": {"content": "Hello"}}]}\n\n',
+        b'data: {"choices": [{"delta": {"content": " world"}}]}\n\n',
+        b'data: {"choices": [], "usage": {"prompt_tokens": 14, "completion_tokens": 2, "total_tokens": 16}}\n\n',
+        b'data: [DONE]\n\n',
+    ]
+
+    class MockAsyncStream(httpx.AsyncByteStream):
+        async def __aiter__(self):
+            for chunk in sse_chunks:
+                yield chunk
+
+        async def aclose(self):
+            pass
+
+    mock_stream_response = httpx.Response(
+        status_code=200,
+        headers={"content-type": "text/event-stream"},
+        stream=MockAsyncStream(),
+        request=httpx.Request("POST", "http://localhost:18999/v1/chat/completions"),
+    )
+
+    with patch.object(httpx.AsyncClient, "send", new_callable=AsyncMock) as mock_send:
+        mock_send.return_value = mock_stream_response
+
+        res = client_with_gateway_db.post("/v1/chat/completions", json=payload, headers=AUTH_HEADERS)
+        assert res.status_code == 200
+
+    with client_with_gateway_db.session_factory() as session:
+        log = session.scalar(
+            select(AuditLogRecord).where(
+                AuditLogRecord.model_id == "qwen-2.5-0.5b-instruct",
+                AuditLogRecord.total_tokens == 16,
+            )
+        )
+        assert log is not None
+        assert log.prompt_tokens == 14
+        assert log.completion_tokens == 2
+        assert log.total_tokens == 16
 
 
 def test_anthropic_messages_success_with_x_api_key(client_with_gateway_db: TestClient):
@@ -400,7 +452,7 @@ def test_anthropic_messages_success_with_x_api_key(client_with_gateway_db: TestC
         "type": "message",
         "role": "assistant",
         "model": "qwen-2.5-0.5b-instruct",
-        "content": [{"type": "text", "text": "Hello from Sovra Gateway!"}],
+        "content": [{"type": "text", "text": "Hello from Cloyst Gateway!"}],
         "stop_reason": "end_turn",
         "usage": {"input_tokens": 12, "output_tokens": 6},
     }
@@ -416,7 +468,7 @@ def test_anthropic_messages_success_with_x_api_key(client_with_gateway_db: TestC
         res = client_with_gateway_db.post("/v1/messages", json=payload, headers=anthropic_headers)
         assert res.status_code == 200
         data = res.json()
-        assert data["content"][0]["text"] == "Hello from Sovra Gateway!"
+        assert data["content"][0]["text"] == "Hello from Cloyst Gateway!"
         assert data["usage"]["output_tokens"] == 6
 
     # Verify audit log recorded Anthropic token usage

@@ -1,4 +1,4 @@
-"""Helper script to register a locally running Ollama model into Sovra's database.
+"""Helper script to register a locally running Ollama model into Cloyst's database.
 
 Usage:
     python scripts/register_ollama.py [model_name] [port]
@@ -86,7 +86,7 @@ def register_ollama(model_name: str = "qwen2.5:0.5b", port: int = 11434):
             deploy.port = port
 
         db.commit()
-        print("✅ Successfully registered deployment in Sovra:")
+        print("✅ Successfully registered deployment in Cloyst:")
         print(f"   Model: {model_name}")
         print(f"   Port:  {port}")
         print(f"   Node:  node-local-pc ({gpu_name})")

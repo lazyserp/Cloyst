@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the Sovra Node Agent Daemon.
+"""Run the Cloyst Node Agent Daemon.
 
 Usage:
     python scripts/run_agent.py [--url http://localhost:8001] [--node-id node-local-pc] [--interval 5]

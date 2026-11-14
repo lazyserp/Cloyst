@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session, sessionmaker
 
-from core.control_plane.app import SOVRA_ADMIN_TOKEN, app
+from core.control_plane.app import CLOYST_ADMIN_TOKEN, app
 from core.db.models import Base
 from core.db.session import get_db, init_db
 
@@ -128,7 +128,7 @@ def test_list_nodes(client_with_test_db: TestClient):
     assert "node-b" in node_ids
 
 
-ADMIN_HEADERS = {"Authorization": f"Bearer {SOVRA_ADMIN_TOKEN}"}
+ADMIN_HEADERS = {"Authorization": f"Bearer {CLOYST_ADMIN_TOKEN}"}
 
 
 def test_admin_routes_missing_token_returns_401(client_with_test_db: TestClient):
@@ -160,7 +160,7 @@ def test_create_api_key(client_with_test_db: TestClient):
 
     data = response.json()
     assert data["name"] == "analytics-service"
-    assert data["api_key"].startswith("sovra_sk_live_")
+    assert data["api_key"].startswith("cloyst_sk_live_")
     assert data["prefix"] == data["api_key"][:16]
     assert data["expires_at"] is not None
 
@@ -290,11 +290,11 @@ def test_create_api_key_invalid_role_fails(client_with_test_db: TestClient):
 
 
 def test_serve_console_ui(client_with_test_db: TestClient):
-    """Verify that the Control Plane serves the Sovra Console single-page UI."""
+    """Verify that the Control Plane serves the Cloyst Console single-page UI."""
     res = client_with_test_db.get("/console")
     assert res.status_code == 200
     assert "text/html" in res.headers["content-type"]
-    assert "Sovra" in res.text
+    assert ("Cloyst" in res.text or "CLOYST" in res.text)
 
 
 def test_metrics_overview_endpoint(client_with_test_db: TestClient):
