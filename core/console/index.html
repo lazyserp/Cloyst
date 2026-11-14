@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sovra — Sovereign AI Observability & Control</title>
+  <title>Cloyst </title>
   <!-- Tailwind CSS CDN with full fallbacks -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -57,29 +57,14 @@
 <body class="min-h-screen flex flex-col bg-zinc-950 text-zinc-100 antialiased selection:bg-brand-600 selection:text-white">
 
   <!-- Top Header -->
-  <header class="h-16 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-40 px-6 flex items-center justify-between">
-    <div class="flex items-center space-x-4">
-      <div class="flex items-center space-x-2">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-violet-500/20">
-          S
-        </div>
-        <span class="font-bold text-lg tracking-wider text-white">SOVRA</span>
-      </div>
-      <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1.5">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
-        Air-Gapped Sovereign AI
-      </span>
+  <header class="h-16 border-b border-zinc-800 bg-zinc-950 sticky top-0 z-40 px-6 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <span class="font-bold text-sm tracking-widest text-white">CLOYST</span>
     </div>
 
-    <!-- Master Token Configuration & Refresh -->
+    <!-- Actions -->
     <div class="flex items-center space-x-3 text-sm">
-      <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 focus-within:border-violet-500 transition-colors">
-        <span class="text-xs text-zinc-500 mr-2 font-mono">TOKEN:</span>
-        <input id="adminTokenInput" type="password" placeholder="Enter admin token..." 
-               class="bg-transparent text-xs text-zinc-200 outline-none w-36 font-mono focus:w-48 transition-all">
-        <button onclick="saveToken()" title="Save Token" class="text-xs text-violet-400 hover:text-violet-300 ml-2 font-semibold">Save</button>
-      </div>
-      <button onclick="fetchCurrentTabData()" class="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 transition-colors" title="Refresh Live Data">
+      <button onclick="fetchCurrentTabData()" class="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-colors" title="Refresh Live Data">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
       </button>
     </div>
@@ -92,50 +77,39 @@
       <nav class="space-y-1">
         <div class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-3 mb-2">Platform</div>
         
-        <button onclick="switchTab('observability')" id="nav-observability" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-zinc-300 hover:bg-zinc-850 hover:text-white">
-          <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <button onclick="switchTab('observability')" id="nav-observability" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-300 hover:bg-zinc-850 hover:text-white">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
           <span>Traces & Metrics</span>
         </button>
 
-        <button onclick="switchTab('nodes')" id="nav-nodes" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
+        <button onclick="switchTab('nodes')" id="nav-nodes" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
           <span>GPU Compute Nodes</span>
         </button>
 
-        <button onclick="switchTab('models')" id="nav-models" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
-          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <button onclick="switchTab('models')" id="nav-models" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
           <span>Models & Deployments</span>
         </button>
 
-        <button onclick="switchTab('projects')" id="nav-projects" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
-          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <button onclick="switchTab('projects')" id="nav-projects" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
           <span>Projects & Tenants</span>
         </button>
 
-        <button onclick="switchTab('keys')" id="nav-keys" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
-          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+        <button onclick="switchTab('keys')" id="nav-keys" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+          <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
           <span>API Keys (RBAC)</span>
         </button>
 
         <div class="pt-4">
           <div class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-3 mb-2">Inference</div>
-          <button onclick="switchTab('playground')" id="nav-playground" class="nav-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
-            <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+          <button onclick="switchTab('playground')" id="nav-playground" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
             <span>AI Playground</span>
           </button>
         </div>
       </nav>
-
-      <!-- Airgap Compliance Badge -->
-      <div class="bg-zinc-900 border border-zinc-800/80 rounded-xl p-3.5 space-y-2">
-        <div class="flex items-center justify-between text-xs font-semibold text-zinc-300">
-          <span>Security Guardrails</span>
-          <span class="text-emerald-400">ENFORCED</span>
-        </div>
-        <div class="text-[11px] text-zinc-400 leading-relaxed">
-          Zero internet egress. Local inference runner on customer GPU hardware.
-        </div>
-      </div>
     </aside>
 
     <!-- Main Dynamic Content Region -->
@@ -149,7 +123,7 @@
         </div>
 
         <!-- Metric KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <div class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Total Inferences</div>
             <div id="statTotalRequests" class="text-2xl font-bold text-white mt-1">0</div>
@@ -157,29 +131,24 @@
           </div>
           <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <div class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Total Tokens Processed</div>
-            <div id="statTotalTokens" class="text-2xl font-bold text-violet-400 mt-1">0</div>
+            <div id="statTotalTokens" class="text-2xl font-bold text-white mt-1">0</div>
             <div class="text-[11px] text-zinc-500 mt-1">Prompt + completion tokens</div>
           </div>
           <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <div class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Average Latency</div>
-            <div id="statAvgLatency" class="text-2xl font-bold text-emerald-400 mt-1">0.00 ms</div>
+            <div id="statAvgLatency" class="text-2xl font-bold text-white mt-1">0.00 ms</div>
             <div class="text-[11px] text-zinc-500 mt-1">Gateway round-trip</div>
-          </div>
-          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-            <div class="text-xs font-medium text-zinc-400 uppercase tracking-wider">Cloud Data Egress</div>
-            <div class="text-2xl font-bold text-emerald-400 mt-1">0 Bytes</div>
-            <div class="text-[11px] text-emerald-500/80 mt-1">100% Private & Disconnected</div>
           </div>
         </div>
 
-        <!-- Traces Table (Langfuse Look & Feel) -->
+        <!-- Traces Table -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-xl">
           <div class="p-4 border-b border-zinc-800 flex justify-between items-center">
             <div class="font-semibold text-sm text-zinc-200 flex items-center gap-2">
               <span>Inference Traces</span>
-              <span id="tracesCountBadge" class="text-xs bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-400">0 events</span>
+              <span id="tracesCountBadge" class="text-xs text-zinc-500 font-mono">0 events</span>
             </div>
-            <button onclick="fetchAuditLogs()" class="text-xs text-violet-400 hover:text-violet-300 font-medium">Refresh Logs</button>
+            <button onclick="fetchAuditLogs()" class="text-xs text-zinc-400 hover:text-white font-medium">Refresh Logs</button>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
@@ -207,7 +176,7 @@
       <section id="tab-nodes" class="space-y-6 hidden">
         <div>
           <h1 class="text-2xl font-bold tracking-tight text-white">GPU Compute Nodes</h1>
-          <p class="text-sm text-zinc-400 mt-1">Self-hosted physical and virtual GPU nodes managed by the Sovra Control Plane.</p>
+          <p class="text-sm text-zinc-400 mt-1">Self-hosted physical and virtual GPU nodes managed by the Cloyst Control Plane.</p>
         </div>
 
         <div id="nodesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -302,7 +271,7 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-2 text-xs font-semibold text-cyan-300">
               <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              <span>Available in Local Ollama (Click to Deploy into Sovra):</span>
+              <span>Available in Local Ollama (Click to Deploy into Cloyst):</span>
             </div>
             <button onclick="document.getElementById('discoveredModelsBanner').classList.add('hidden')" class="text-zinc-500 hover:text-zinc-300 text-xs">Dismiss</button>
           </div>
@@ -352,7 +321,7 @@
 
             <div class="space-y-1.5">
               <label class="text-xs text-zinc-400">Client API Key (Bearer)</label>
-              <input id="playgroundKey" type="password" placeholder="sovra_sk_live_..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-violet-500 font-mono">
+              <input id="playgroundKey" type="password" placeholder="cloyst_sk_live_..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-violet-500 font-mono">
             </div>
 
             <div class="space-y-1.5">
@@ -446,7 +415,7 @@
             </button>
           </div>
           <div id="deployVerifyResult" class="text-xs text-zinc-500 font-mono">
-            Click 'Test Connection' to verify this engine is reachable from Sovra Control Plane.
+            Click 'Test Connection' to verify this engine is reachable from Cloyst Control Plane.
           </div>
         </div>
       </div>
@@ -518,10 +487,10 @@
         <h3 class="text-lg font-bold text-white">API Key Generated</h3>
       </div>
       <p class="text-xs text-zinc-400">
-        Copy your secret API key now. For enterprise security, Sovra only stores a one-way SHA-256 hash and <span class="text-amber-400">cannot display it again</span>.
+        Copy your secret API key now. For enterprise security, Cloyst only stores a one-way SHA-256 hash and <span class="text-amber-400">cannot display it again</span>.
       </p>
       <div class="bg-zinc-950 border border-zinc-800 p-3 rounded-xl flex items-center justify-between font-mono text-xs text-violet-300 select-all break-all">
-        <span id="newKeyPlain">sovra_sk_live_...</span>
+        <span id="newKeyPlain">cloyst_sk_live_...</span>
         <button onclick="copySecretKey()" class="ml-3 px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white rounded text-xs font-sans">Copy</button>
       </div>
       <div class="flex justify-end pt-2">
@@ -541,24 +510,26 @@
 
     // Token Management
     function getAdminToken() {
-      return localStorage.getItem('SOVRA_ADMIN_TOKEN') || 'sovra-master-secret-2026';
+      return localStorage.getItem('CLOYST_ADMIN_TOKEN') || 'cloyst';
     }
 
     function saveToken() {
-      const val = document.getElementById('adminTokenInput').value.trim();
+      const el = document.getElementById('adminTokenInput');
+      const val = el ? el.value.trim() : 'cloyst';
       if (val) {
-        localStorage.setItem('SOVRA_ADMIN_TOKEN', val);
+        localStorage.setItem('CLOYST_ADMIN_TOKEN', val);
         showToast("Admin token saved", "success");
         fetchCurrentTabData();
       }
     }
 
     function initTokenInput() {
-      const stored = localStorage.getItem('SOVRA_ADMIN_TOKEN');
-      if (stored) {
-        document.getElementById('adminTokenInput').value = stored;
-      } else {
-        document.getElementById('adminTokenInput').value = 'sovra-master-secret-2026';
+      if (!localStorage.getItem('CLOYST_ADMIN_TOKEN')) {
+        localStorage.setItem('CLOYST_ADMIN_TOKEN', 'cloyst');
+      }
+      const el = document.getElementById('adminTokenInput');
+      if (el) {
+        el.value = localStorage.getItem('CLOYST_ADMIN_TOKEN');
       }
     }
 
@@ -639,30 +610,30 @@
         }
 
         tbody.innerHTML = logs.map(log => {
-          let statusBadge = '';
+          let statusText = '';
           if (log.status_code === 200) {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">200 OK</span>`;
+            statusText = `<span class="text-white font-mono font-medium">200 OK</span>`;
           } else if (log.status_code === 429) {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">429 RATE LIMIT</span>`;
+            statusText = `<span class="text-zinc-300 font-mono">429 RATE LIMIT</span>`;
           } else if (log.status_code === 404) {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono">404 NOT FOUND</span>`;
+            statusText = `<span class="text-zinc-400 font-mono">404</span>`;
           } else {
-            statusBadge = `<span class="px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-mono">${log.status_code} ERROR</span>`;
+            statusText = `<span class="text-zinc-300 font-mono">${log.status_code}</span>`;
           }
 
-          const projectBadge = log.project_id 
-            ? `<span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">${log.project_id.slice(0, 8)}...</span>` 
-            : `<span class="text-zinc-600 font-mono">unscoped</span>`;
+          const projectText = log.project_id 
+            ? `<span class="text-zinc-300 font-mono">${log.project_id.slice(0, 8)}</span>` 
+            : `<span class="text-zinc-500 font-mono">—</span>`;
 
           const dateStr = new Date(log.created_at).toLocaleTimeString();
 
           return `
             <tr class="hover:bg-zinc-850/50 transition-colors">
-              <td class="py-3 px-4">${statusBadge}</td>
+              <td class="py-3 px-4">${statusText}</td>
               <td class="py-3 px-4 font-mono text-zinc-400">${dateStr}</td>
               <td class="py-3 px-4 font-mono text-zinc-300">${log.model_id}</td>
-              <td class="py-3 px-4">${projectBadge}</td>
-              <td class="py-3 px-4 font-mono text-zinc-300">${log.prompt_tokens} / ${log.completion_tokens} <span class="text-violet-400 font-semibold">(${log.total_tokens})</span></td>
+              <td class="py-3 px-4">${projectText}</td>
+              <td class="py-3 px-4 font-mono text-zinc-300">${log.prompt_tokens} / ${log.completion_tokens} <span class="text-zinc-500">(${log.total_tokens})</span></td>
               <td class="py-3 px-4 font-mono text-zinc-300">${log.latency_ms} ms</td>
             </tr>
           `;
@@ -683,7 +654,7 @@
         if (nodes.length === 0) {
           container.innerHTML = `
             <div class="col-span-2 bg-zinc-900 border border-dashed border-zinc-800 rounded-xl p-8 text-center text-zinc-500">
-              No GPU nodes registered. Start the Sovra Node Agent daemon to connect hardware.
+              No GPU nodes registered. Start the Cloyst Node Agent daemon to connect hardware.
             </div>`;
           return;
         }
@@ -692,15 +663,9 @@
           const usedVram = Math.max(0, node.total_vram_mb - node.free_vram_mb);
           const pct = node.total_vram_mb > 0 ? Math.min(100, Math.round((usedVram / node.total_vram_mb) * 100)) : 0;
           const isOnline = (node.status || '').toLowerCase() === 'online';
-          const statusBadge = isOnline
-            ? `<span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
-                ONLINE
-               </span>`
-            : `<span class="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-                OFFLINE
-               </span>`;
+          const statusText = isOnline
+            ? `<span class="text-white font-mono text-xs font-medium">ONLINE</span>`
+            : `<span class="text-zinc-500 font-mono text-xs">OFFLINE</span>`;
 
           const heartbeatStr = node.last_heartbeat ? new Date(node.last_heartbeat).toLocaleTimeString() : 'Never';
 
@@ -711,7 +676,7 @@
                   <div class="font-bold text-white text-base">${node.hostname}</div>
                   <div class="text-xs text-zinc-400 font-mono mt-0.5">${node.ip_address} • ${node.gpu_name || 'Generic GPU'}</div>
                 </div>
-                ${statusBadge}
+                ${statusText}
               </div>
 
               <div class="space-y-1.5">
@@ -719,8 +684,8 @@
                   <span>VRAM Utilization</span>
                   <span>${usedVram} / ${node.total_vram_mb} MB (${pct}%)</span>
                 </div>
-                <div class="w-full bg-zinc-950 rounded-full h-2 overflow-hidden border border-zinc-800">
-                  <div class="bg-gradient-to-r from-violet-600 to-indigo-500 h-2 rounded-full transition-all duration-700 ease-out" style="width: ${pct}%"></div>
+                <div class="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden border border-zinc-800">
+                  <div class="bg-zinc-200 h-1.5 rounded-full transition-all duration-700 ease-out" style="width: ${pct}%"></div>
                 </div>
               </div>
 
@@ -780,24 +745,24 @@
         }
 
         tbody.innerHTML = keys.map(k => {
-          const statusBadge = k.is_active 
-            ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ACTIVE</span>`
-            : `<span class="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-500 border border-zinc-700">REVOKED</span>`;
+          const statusText = k.is_active 
+            ? `<span class="text-white font-mono font-medium">ACTIVE</span>`
+            : `<span class="text-zinc-500 font-mono">REVOKED</span>`;
 
-          const roleBadge = `<span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono">${k.role}</span>`;
-          const projText = k.project_id ? `<span class="font-mono text-blue-400">${k.project_id.slice(0, 8)}...</span>` : `<span class="text-zinc-600">Global</span>`;
+          const roleText = `<span class="text-zinc-300 font-mono">${k.role}</span>`;
+          const projText = k.project_id ? `<span class="font-mono text-zinc-300">${k.project_id.slice(0, 8)}</span>` : `<span class="text-zinc-500">Global</span>`;
 
           const actionBtn = k.is_active 
-            ? `<button onclick="revokeKey('${k.id}')" class="px-2.5 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-medium">Revoke</button>`
+            ? `<button onclick="revokeKey('${k.id}')" class="text-xs text-red-400 hover:text-red-300 font-medium">Revoke</button>`
             : `<span class="text-zinc-600">—</span>`;
 
           return `
             <tr class="hover:bg-zinc-850/50 transition-colors">
               <td class="py-3 px-4 font-semibold text-white">${k.name}</td>
-              <td class="py-3 px-4 font-mono text-violet-400">${k.prefix}...</td>
-              <td class="py-3 px-4">${roleBadge}</td>
+              <td class="py-3 px-4 font-mono text-zinc-300">${k.prefix}...</td>
+              <td class="py-3 px-4">${roleText}</td>
               <td class="py-3 px-4">${projText}</td>
-              <td class="py-3 px-4">${statusBadge}</td>
+              <td class="py-3 px-4">${statusText}</td>
               <td class="py-3 px-4 text-right">${actionBtn}</td>
             </tr>
           `;
@@ -893,21 +858,21 @@
         }
 
         tbody.innerHTML = deployments.map(d => {
-          const statusBadge = d.status === 'running'
-            ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>RUNNING</span>`
-            : `<span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">${d.status}</span>`;
+          const statusText = d.status === 'running'
+            ? `<span class="text-white font-mono font-medium">RUNNING</span>`
+            : `<span class="text-zinc-400 font-mono">${d.status}</span>`;
 
-          const engineBadge = `<span class="px-2 py-0.5 rounded bg-zinc-800 text-cyan-300 font-mono text-[11px]">${(d.engine_type || 'ollama').toUpperCase()}</span>`;
+          const engineText = `<span class="text-zinc-300 font-mono text-xs">${(d.engine_type || 'ollama').toUpperCase()}</span>`;
 
           return `
             <tr class="hover:bg-zinc-850/50 transition-colors">
               <td class="py-3 px-4 font-semibold text-white font-mono">${d.model_id}</td>
-              <td class="py-3 px-4">${engineBadge}</td>
+              <td class="py-3 px-4">${engineText}</td>
               <td class="py-3 px-4 font-mono text-zinc-400">${d.port}</td>
               <td class="py-3 px-4 text-zinc-300">${d.node_hostname || d.node_id}</td>
-              <td class="py-3 px-4">${statusBadge}</td>
+              <td class="py-3 px-4">${statusText}</td>
               <td class="py-3 px-4 text-right">
-                <button onclick="undeployModel('${d.id}')" class="px-2.5 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-medium">Undeploy</button>
+                <button onclick="undeployModel('${d.id}')" class="text-xs text-red-400 hover:text-red-300 font-medium">Undeploy</button>
               </td>
             </tr>
           `;
@@ -992,7 +957,7 @@
         closeModal('modalDeployModel');
         document.getElementById('deployModelId').value = '';
         document.getElementById('deployModelName').value = '';
-        document.getElementById('deployVerifyResult').innerText = "Click 'Test Connection' to verify this engine is reachable from Sovra Control Plane.";
+        document.getElementById('deployVerifyResult').innerText = "Click 'Test Connection' to verify this engine is reachable from Cloyst Control Plane.";
         showToast(`Model '${modelId}' deployed on ${host}:${port}!`, "success");
         fetchDeployments();
       } else {
@@ -1038,18 +1003,25 @@
     }
 
     async function deployOllamaDirect(name) {
-      const res = await apiFetch('/api/v1/deployments', {
-        method: 'POST',
-        body: JSON.stringify({
-          model_id: name,
-          name: name,
-          engine_type: "ollama",
-          port: 11434
-        })
-      });
-      if (res.ok) {
-        showToast(`Deployed '${name}' into Sovra!`, "success");
-        fetchDeployments();
+      try {
+        const res = await apiFetch('/api/v1/deployments', {
+          method: 'POST',
+          body: JSON.stringify({
+            model_id: name,
+            name: name,
+            engine_type: "ollama",
+            port: 11434
+          })
+        });
+        if (res.ok) {
+          showToast(`Deployed '${name}' into Cloyst!`, "success");
+          fetchDeployments();
+        } else {
+          const err = await res.json().catch(() => ({}));
+          showToast(err.detail || `Deployment failed (HTTP ${res.status})`, "error");
+        }
+      } catch (err) {
+        showToast("Deployment error: " + err.message, "error");
       }
     }
 
