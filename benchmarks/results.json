@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-11-23T13:22:21Z",
+  "total_requests": 100,
+  "concurrency": 20,
+  "throughput_rps": 315.97,
+  "latency_ms": {
+    "avg": 3.164,
+    "p50": 3.058,
+    "p95": 3.724,
+    "p99": 6.594,
+    "min": 2.744,
+    "max": 6.594
+  },
+  "cache_performance_ms": {
+    "miss_latency": 335.655,
+    "hit_latency": 3.337,
+    "speedup_factor": 100.58
+  },
+  "embeddings_rps": 263.51,
+  "gateway_overhead_ms": 3.164
+}

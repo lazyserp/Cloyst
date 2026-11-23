@@ -104,4 +104,8 @@ class AuditLogRecord(Base):
     error_message: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc),index=True)
     project_id: Mapped[str | None] = mapped_column(ForeignKey("projects.id"),nullable=True,index=True,)
+    request_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    prev_record_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    record_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+
 

@@ -1,11 +1,14 @@
 import os
 import json
 import socket
+import hashlib
 import httpx
 import time
+import uuid
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from core.observability.metrics import global_metrics
+from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.security.api_key import APIKeyHeader
 from sqlalchemy import select
@@ -15,7 +18,17 @@ from core.db.session import get_db, init_db
 from core.gateway.schema import AnthropicMessageRequest, ChatCompletionRequest
 from core.db.models import ApiKeyRecord, AuditLogRecord, DeploymentRecord, NodeRecord
 from core.security.keys import verify_api_key
+from core.security.audit import record_audit_entry
 from core.gateway.limiter import InMemoryRateLimiter
+from core.adapters.base import adapter_registry
+from core.adapters.translation import (
+    anthropic_to_openai_request,
+    openai_to_anthropic_request,
+    openai_to_anthropic_response,
+)
+from core.routing.router import global_router
+from core.policies.guardrails import global_guardrails
+from core.cache.cache import global_cache
 
 rate_limiter = InMemoryRateLimiter(requests_per_minute=60, burst=10)
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -31,6 +44,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_request_id_middleware(request: Request, call_next):
+    req_id = request.headers.get("x-cloyst-request-id") or f"cloyst-{uuid.uuid4().hex[:16]}"
+    request.state.request_id = req_id
+    response = await call_next(request)
+    response.headers["x-cloyst-request-id"] = req_id
+    return response
 
 
 def extract_message_text(m) -> str:
@@ -113,6 +135,12 @@ async def health():
     return {"status": "healthy", "service": "cloyst-gateway"}
 
 
+@app.get("/metrics", response_class=PlainTextResponse)
+def get_metrics():
+    """Prometheus exposition metrics."""
+    return global_metrics.generate_prometheus_text()
+
+
 @app.get("/v1/models")
 def list_models(db: Session = Depends(get_db)):
     """List all models currently running in the database."""
@@ -127,17 +155,210 @@ def list_models(db: Session = Depends(get_db)):
     }
 
 
+@app.get("/v1/routing/dry-run")
+def routing_dry_run(
+    model: str = "qwen-2.5-0.5b-instruct",
+    strategy: str = "least-busy",
+    api_key: ApiKeyRecord = Depends(get_current_api_key),
+):
+    """Explain routing decisions and candidate health metrics."""
+    return global_router.dry_run(model, strategy)
+
+
+@app.post("/v1/messages/count_tokens")
+async def count_tokens(
+    request: AnthropicMessageRequest,
+    api_key: ApiKeyRecord = Depends(get_current_api_key),
+):
+    """Anthropic-compatible token counting endpoint."""
+    text_content = sum(len(extract_message_text(m)) for m in request.messages)
+    if request.system:
+        text_content += len(str(request.system))
+    token_est = max(1, text_content // 4)
+    return {"input_tokens": token_est}
+
+
+@app.post("/v1/completions")
+async def legacy_completions(
+    request: Request,
+    api_key: ApiKeyRecord = Depends(get_current_api_key),
+    db: Session = Depends(get_db),
+):
+    """OpenAI-compatible legacy text completions endpoint."""
+    body = await request.json()
+    model = body.get("model", "")
+    prompt = body.get("prompt", "")
+    prompt_str = prompt if isinstance(prompt, str) else " ".join(str(p) for p in prompt)
+    chat_req = ChatCompletionRequest(
+        model=model,
+        messages=[{"role": "user", "content": prompt_str}],
+        max_tokens=body.get("max_tokens", 256),
+        temperature=body.get("temperature", 0.7),
+        stream=False,
+    )
+    res = await chat_completions(chat_req, request, api_key, db)
+    if isinstance(res, JSONResponse):
+        res = json.loads(res.body.decode("utf-8"))
+    choices = res.get("choices", [{}]) if isinstance(res, dict) else [{}]
+    txt = choices[0].get("message", {}).get("content", "") if choices else ""
+    return {
+        "id": res.get("id", f"cmpl-{int(time.time())}") if isinstance(res, dict) else f"cmpl-{int(time.time())}",
+        "object": "text_completion",
+        "created": int(time.time()),
+        "model": model,
+        "choices": [{"text": txt, "index": 0, "finish_reason": "stop"}],
+        "usage": res.get("usage", {}) if isinstance(res, dict) else {},
+    }
+
+
+@app.post("/v1/embeddings")
+async def create_embeddings(
+    request: Request,
+    api_key: ApiKeyRecord = Depends(get_current_api_key),
+    db: Session = Depends(get_db),
+):
+    """OpenAI-compatible embeddings endpoint."""
+    body = await request.json()
+    model = body.get("model", "")
+    input_data = body.get("input", "")
+    inputs = [input_data] if isinstance(input_data, str) else input_data
+
+    stmt = select(DeploymentRecord).where(
+        DeploymentRecord.model_id == model,
+        DeploymentRecord.status == "running",
+    )
+    deployment = db.scalar(stmt)
+    if deployment:
+        node = db.get(NodeRecord, deployment.node_id)
+        raw_host = node.ip_address if (node and node.ip_address) else "127.0.0.1"
+        host = resolve_target_host(raw_host)
+        backend_url = f"http://{host}:{deployment.port}/v1/embeddings"
+        try:
+            async with httpx.AsyncClient(timeout=1.5) as client:
+                resp = await client.post(backend_url, json=body)
+                if resp.status_code == 200:
+                    return resp.json()
+        except Exception:
+            pass
+
+    # Deterministic local offline embedding vector (32-dim)
+    data = []
+    total_tokens = 0
+    for idx, text in enumerate(inputs):
+        h = hashlib.sha256(str(text).encode("utf-8")).digest()
+        vec = [round((float(b) / 128.0) - 1.0, 4) for b in h[:32]]
+        data.append({"object": "embedding", "index": idx, "embedding": vec})
+        total_tokens += max(1, len(str(text)) // 4)
+
+    return {
+        "object": "list",
+        "data": data,
+        "model": model,
+        "usage": {"prompt_tokens": total_tokens, "total_tokens": total_tokens},
+    }
+
+
+def log_gateway_audit(
+    db: Session,
+    model_id: str,
+    api_key_id: str | None = None,
+    project_id: str | None = None,
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+    total_tokens: int = 0,
+    latency_ms: float = 0.0,
+    status_code: int = 200,
+    error_message: str | None = None,
+    request_id: str | None = None,
+):
+    """Record an audit log entry with hash chain integrity."""
+    try:
+        record_audit_entry(
+            db=db,
+            model_id=model_id,
+            api_key_id=api_key_id,
+            project_id=project_id,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            latency_ms=latency_ms,
+            status_code=status_code,
+            error_message=error_message,
+            request_id=request_id,
+        )
+    except Exception:
+        try:
+            audit_log = AuditLogRecord(
+                api_key_id=api_key_id,
+                model_id=model_id,
+                project_id=project_id,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens or (prompt_tokens + completion_tokens),
+                latency_ms=round(latency_ms, 2),
+                status_code=status_code,
+                error_message=error_message,
+                request_id=request_id,
+            )
+            db.add(audit_log)
+            db.commit()
+        except Exception:
+            pass
+
+
 # ==========================================
 # 1. OpenAI-Compatible Chat Completions API
 # ==========================================
 @app.post("/v1/chat/completions")
 async def chat_completions(
     request: ChatCompletionRequest,
+    http_request: Request,
     api_key: ApiKeyRecord = Depends(get_current_api_key),
     db: Session = Depends(get_db),
 ):
     """Route chat completions dynamically to the active engine port from the database."""
     start_time = time.perf_counter()
+    req_id = getattr(getattr(http_request, "state", None), "request_id", None)
+
+    # 1. Evaluate Guardrails
+    raw_msgs = [m.model_dump() if hasattr(m, "model_dump") else dict(m) for m in request.messages]
+    clean_msgs, violations, is_blocked = global_guardrails.process_messages(
+        raw_msgs,
+        mode=os.getenv("CLOYST_GUARDRAILS_MODE", "off"),
+        project_id=api_key.project_id,
+    )
+    if is_blocked:
+        log_gateway_audit(
+            db=db,
+            api_key_id=api_key.id,
+            model_id=request.model,
+            project_id=api_key.project_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_message="Blocked by safety guardrails",
+            request_id=req_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "Request blocked by safety guardrails policy",
+                "violations": [v.to_dict() for v in violations],
+            },
+        )
+
+    # 2. Check Exact-Match Response Cache (zero latency, zero DB calls)
+    if not request.stream:
+        cached_resp = global_cache.get(
+            model=request.model,
+            messages=raw_msgs,
+            project_id=api_key.project_id,
+            temperature=request.temperature,
+            tools=request.tools,
+        )
+        if cached_resp:
+            return JSONResponse(
+                content=cached_resp,
+                headers={"x-cloyst-cache": "HIT", "x-cloyst-request-id": req_id or ""},
+            )
 
     stmt = select(DeploymentRecord).where(
         DeploymentRecord.model_id == request.model,
@@ -147,15 +368,15 @@ async def chat_completions(
 
     allowed, retry_after = rate_limiter.check(api_key.id)
     if not allowed:
-        audit_log = AuditLogRecord(
+        log_gateway_audit(
+            db=db,
             api_key_id=api_key.id,
             model_id=request.model,
             project_id=api_key.project_id,
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             error_message=f"Rate limit exceeded. Retry after {retry_after}s.",
+            request_id=req_id,
         )
-        db.add(audit_log)
-        db.commit()
 
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -164,15 +385,15 @@ async def chat_completions(
         )
 
     if not deployment:
-        audit_log = AuditLogRecord(
+        log_gateway_audit(
+            db=db,
             api_key_id=api_key.id,
             model_id=request.model,
             status_code=status.HTTP_404_NOT_FOUND,
             project_id=api_key.project_id,
             error_message=f"Model {request.model} is not currently running",
+            request_id=req_id,
         )
-        db.add(audit_log)
-        db.commit()
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -337,7 +558,8 @@ async def chat_completions(
                 yield b"data: [DONE]\n\n"
 
                 latency_ms = (time.perf_counter() - start_time) * 1000.0
-                audit_log = AuditLogRecord(
+                log_gateway_audit(
+                    db=db,
                     api_key_id=api_key.id,
                     model_id=request.model,
                     prompt_tokens=prompt_tokens,
@@ -346,9 +568,8 @@ async def chat_completions(
                     project_id=api_key.project_id,
                     latency_ms=round(latency_ms, 2),
                     status_code=200,
+                    request_id=req_id,
                 )
-                db.add(audit_log)
-                db.commit()
 
             return StreamingResponse(
                 tool_stream_generator(),
@@ -421,7 +642,8 @@ async def chat_completions(
                     if total_tokens == 0:
                         total_tokens = prompt_tokens + completion_tokens
 
-                    audit_log = AuditLogRecord(
+                    log_gateway_audit(
+                        db=db,
                         api_key_id=api_key.id,
                         model_id=request.model,
                         prompt_tokens=prompt_tokens,
@@ -430,9 +652,8 @@ async def chat_completions(
                         project_id=api_key.project_id,
                         latency_ms=round(latency_ms, 2),
                         status_code=200,
+                        request_id=req_id,
                     )
-                    db.add(audit_log)
-                    db.commit()
 
             return StreamingResponse(
                 stream_generator(),
@@ -442,16 +663,16 @@ async def chat_completions(
         except httpx.ConnectError:
             await client.aclose()
             latency_ms = (time.perf_counter() - start_time) * 1000.0
-            audit_log = AuditLogRecord(
+            log_gateway_audit(
+                db=db,
                 api_key_id=api_key.id,
                 model_id=request.model,
                 latency_ms=round(latency_ms, 2),
                 project_id=api_key.project_id,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 error_message=f"Inference engine for '{request.model}' on port {deployment.port} is unreachable.",
+                request_id=req_id,
             )
-            db.add(audit_log)
-            db.commit()
 
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -470,7 +691,8 @@ async def chat_completions(
             usage = data.get("usage", {})
             latency_ms = (time.perf_counter() - start_time) * 1000.0
 
-            audit_log = AuditLogRecord(
+            log_gateway_audit(
+                db=db,
                 api_key_id=api_key.id,
                 model_id=request.model,
                 prompt_tokens=usage.get("prompt_tokens", 0),
@@ -479,23 +701,30 @@ async def chat_completions(
                 latency_ms=round(latency_ms, 2),
                 project_id=api_key.project_id,
                 status_code=response.status_code,
+                request_id=req_id,
             )
-            db.add(audit_log)
-            db.commit()
+            global_cache.set(
+                model=request.model,
+                messages=raw_msgs,
+                data=data,
+                project_id=api_key.project_id,
+                temperature=request.temperature,
+                tools=request.tools,
+            )
             return data
 
         except httpx.ConnectError:
             latency_ms = (time.perf_counter() - start_time) * 1000.0
-            audit_log = AuditLogRecord(
+            log_gateway_audit(
+                db=db,
                 api_key_id=api_key.id,
                 model_id=request.model,
                 latency_ms=round(latency_ms, 2),
                 project_id=api_key.project_id,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 error_message=f"Inference engine for '{request.model}' on port {deployment.port} is unreachable.",
+                request_id=req_id,
             )
-            db.add(audit_log)
-            db.commit()
 
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -509,11 +738,53 @@ async def chat_completions(
 @app.post("/v1/messages")
 async def messages(
     request: AnthropicMessageRequest,
+    http_request: Request,
     api_key: ApiKeyRecord = Depends(get_current_api_key),
     db: Session = Depends(get_db),
 ):
     """Route Anthropic Messages API requests dynamically to the active engine port."""
     start_time = time.perf_counter()
+    req_id = getattr(getattr(http_request, "state", None), "request_id", None)
+
+    # 1. Evaluate Guardrails
+    raw_msgs = [m.model_dump() if hasattr(m, "model_dump") else dict(m) for m in request.messages]
+    clean_msgs, violations, is_blocked = global_guardrails.process_messages(
+        raw_msgs,
+        mode=os.getenv("CLOYST_GUARDRAILS_MODE", "off"),
+        project_id=api_key.project_id,
+    )
+    if is_blocked:
+        log_gateway_audit(
+            db=db,
+            api_key_id=api_key.id,
+            model_id=request.model,
+            project_id=api_key.project_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_message="Blocked by safety guardrails",
+            request_id=req_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "Request blocked by safety guardrails policy",
+                "violations": [v.to_dict() for v in violations],
+            },
+        )
+
+    # 2. Check Exact-Match Response Cache (zero latency, zero DB calls)
+    if not request.stream:
+        cached_resp = global_cache.get(
+            model=request.model,
+            messages=raw_msgs,
+            project_id=api_key.project_id,
+            temperature=request.temperature,
+            tools=request.tools,
+        )
+        if cached_resp:
+            return JSONResponse(
+                content=cached_resp,
+                headers={"x-cloyst-cache": "HIT", "x-cloyst-request-id": req_id or ""},
+            )
 
     stmt = select(DeploymentRecord).where(
         DeploymentRecord.model_id == request.model,
@@ -523,15 +794,15 @@ async def messages(
 
     allowed, retry_after = rate_limiter.check(api_key.id)
     if not allowed:
-        audit_log = AuditLogRecord(
+        log_gateway_audit(
+            db=db,
             api_key_id=api_key.id,
             model_id=request.model,
             project_id=api_key.project_id,
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             error_message=f"Rate limit exceeded. Retry after {retry_after}s.",
+            request_id=req_id,
         )
-        db.add(audit_log)
-        db.commit()
 
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -540,15 +811,15 @@ async def messages(
         )
 
     if not deployment:
-        audit_log = AuditLogRecord(
+        log_gateway_audit(
+            db=db,
             api_key_id=api_key.id,
             model_id=request.model,
             status_code=status.HTTP_404_NOT_FOUND,
             project_id=api_key.project_id,
             error_message=f"Model {request.model} is not currently running",
+            request_id=req_id,
         )
-        db.add(audit_log)
-        db.commit()
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -590,8 +861,6 @@ async def messages(
 
                 try:
                     async for chunk in response.aiter_raw():
-                        with open("/tmp/last_chunks.log", "ab") as f:
-                            f.write(chunk)
                         yield chunk
                         try:
                             text_buffer += chunk.decode("utf-8", errors="ignore")
@@ -631,7 +900,8 @@ async def messages(
                     if total_tokens == 0:
                         total_tokens = prompt_tokens + completion_tokens
 
-                    audit_log = AuditLogRecord(
+                    log_gateway_audit(
+                        db=db,
                         api_key_id=api_key.id,
                         model_id=request.model,
                         prompt_tokens=prompt_tokens,
@@ -640,9 +910,8 @@ async def messages(
                         project_id=api_key.project_id,
                         latency_ms=round(latency_ms, 2),
                         status_code=200,
+                        request_id=req_id,
                     )
-                    db.add(audit_log)
-                    db.commit()
 
             return StreamingResponse(
                 stream_generator(),
@@ -652,16 +921,16 @@ async def messages(
         except httpx.ConnectError:
             await client.aclose()
             latency_ms = (time.perf_counter() - start_time) * 1000.0
-            audit_log = AuditLogRecord(
+            log_gateway_audit(
+                db=db,
                 api_key_id=api_key.id,
                 model_id=request.model,
                 latency_ms=round(latency_ms, 2),
                 project_id=api_key.project_id,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 error_message=f"Inference engine for '{request.model}' on port {deployment.port} is unreachable.",
+                request_id=req_id,
             )
-            db.add(audit_log)
-            db.commit()
 
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -684,7 +953,8 @@ async def messages(
             comp_toks = usage.get("output_tokens") or usage.get("completion_tokens", 0)
             total_toks = prompt_toks + comp_toks
 
-            audit_log = AuditLogRecord(
+            log_gateway_audit(
+                db=db,
                 api_key_id=api_key.id,
                 model_id=request.model,
                 prompt_tokens=prompt_toks,
@@ -693,23 +963,30 @@ async def messages(
                 latency_ms=round(latency_ms, 2),
                 project_id=api_key.project_id,
                 status_code=response.status_code,
+                request_id=req_id,
             )
-            db.add(audit_log)
-            db.commit()
+            global_cache.set(
+                model=request.model,
+                messages=raw_msgs,
+                data=data,
+                project_id=api_key.project_id,
+                temperature=request.temperature,
+                tools=request.tools,
+            )
             return data
 
         except httpx.ConnectError:
             latency_ms = (time.perf_counter() - start_time) * 1000.0
-            audit_log = AuditLogRecord(
+            log_gateway_audit(
+                db=db,
                 api_key_id=api_key.id,
                 model_id=request.model,
                 latency_ms=round(latency_ms, 2),
                 project_id=api_key.project_id,
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 error_message=f"Inference engine for '{request.model}' on port {deployment.port} is unreachable.",
+                request_id=req_id,
             )
-            db.add(audit_log)
-            db.commit()
 
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

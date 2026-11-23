@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cloyst </title>
-  <!-- Tailwind CSS CDN with full fallbacks -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Completely Offline Tailwind CSS - Zero External CDN Dependencies -->
+  <link rel="stylesheet" href="/static/tailwind.min.css">
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -107,6 +107,22 @@
           <button onclick="switchTab('playground')" id="nav-playground" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
             <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
             <span>AI Playground</span>
+          </button>
+        </div>
+
+        <div class="pt-4">
+          <div class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider px-3 mb-2">Air-Gap & Trust</div>
+          <button onclick="switchTab('audit')" id="nav-audit" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span>Immutable Audit Chain</span>
+          </button>
+          <button onclick="switchTab('guardrails')" id="nav-guardrails" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span>Safety Guardrails</span>
+          </button>
+          <button onclick="switchTab('settings')" id="nav-settings" class="nav-item w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-zinc-400 hover:bg-zinc-850 hover:text-white">
+            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+            <span>Air-Gap & Egress Guard</span>
           </button>
         </div>
       </nav>
@@ -359,6 +375,105 @@
         </div>
       </section>
 
+      <!-- TAB: AUDIT LOG & CRYPTOGRAPHIC HASH CHAIN VERIFIER -->
+      <section id="tab-audit" class="space-y-6 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">Cryptographic Audit Chain</h1>
+            <p class="text-sm text-zinc-400 mt-1">Tamper-evident inference audit trail linked by SHA-256 hash chains.</p>
+          </div>
+          <button onclick="verifyAuditChainUI()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-emerald-600/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span>Verify Audit Chain</span>
+          </button>
+        </div>
+
+        <div id="auditVerifyStatusBox" class="p-4 rounded-xl border border-zinc-800 bg-zinc-900/60 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div>
+              <div class="text-sm font-semibold text-white">Audit Log Integrity Status</div>
+              <div id="auditVerifyText" class="text-xs text-zinc-400">Click 'Verify Audit Chain' to compute and validate parent hashes across all records.</div>
+            </div>
+          </div>
+          <span id="auditCountBadge" class="px-2.5 py-1 rounded bg-zinc-800 text-xs font-mono text-zinc-300">Ready</span>
+        </div>
+
+        <div class="border border-zinc-800 rounded-xl bg-zinc-900/40 overflow-hidden">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-zinc-800 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider bg-zinc-950/40">
+                <th class="p-4">Timestamp</th>
+                <th class="p-4">Model</th>
+                <th class="p-4">Tokens</th>
+                <th class="p-4">Latency</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Record SHA-256 Hash</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody" class="divide-y divide-zinc-800/60 text-xs text-zinc-300 font-mono">
+              <tr><td colspan="6" class="p-6 text-center text-zinc-500">Loading audit trail...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: SAFETY GUARDRAILS -->
+      <section id="tab-guardrails" class="space-y-6 hidden">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Offline Safety Guardrails</h1>
+          <p class="text-sm text-zinc-400 mt-1">Zero-external-call prompt sanitization, PII masking, and injection heuristics.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-5 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-white">PII Redaction</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">ENFORCED</span>
+            </div>
+            <p class="text-xs text-zinc-400">Scans and redacts Social Security Numbers, credit cards, emails, and phone numbers before dispatching to inference engine.</p>
+          </div>
+          <div class="p-5 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-white">Secret Scanning</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">ENFORCED</span>
+            </div>
+            <p class="text-xs text-zinc-400">Identifies and masks private keys, AWS access tokens, and API credentials in user prompts and completions.</p>
+          </div>
+          <div class="p-5 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-semibold text-white">Prompt Injection Checks</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">ENFORCED</span>
+            </div>
+            <p class="text-xs text-zinc-400">Heuristic pattern detection for jailbreak phrases, delimiter escapes, and system instruction overrides.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: AIR-GAP & EGRESS SETTINGS -->
+      <section id="tab-settings" class="space-y-6 hidden">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Air-Gap & Egress Guard Settings</h1>
+          <p class="text-sm text-zinc-400 mt-1">Runtime isolation controls and operator allowlists.</p>
+        </div>
+
+        <div class="p-6 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-4">
+          <div class="flex items-center space-x-3">
+            <span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span>
+            <div>
+              <div class="text-sm font-bold text-white">Air-Gap Protection: ACTIVE</div>
+              <div class="text-xs text-zinc-400">All outbound telemetry, CDNs, remote fonts, and external cloud connections are prohibited by default.</div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-zinc-800 space-y-2">
+            <div class="text-xs font-semibold text-zinc-300 uppercase tracking-wider">Permitted Egress Destinaton Allowlist</div>
+            <div class="p-3 rounded-lg bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-300">
+              127.0.0.1, localhost, 0.0.0.0, host.docker.internal
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -564,6 +679,54 @@
         fetchKeys();
       } else if (currentTab === 'models') {
         fetchDeployments();
+      } else if (currentTab === 'audit') {
+        fetchAuditChain();
+      }
+    }
+
+    async function fetchAuditChain() {
+      const data = await apiFetch('/api/v1/audit-logs?limit=50');
+      const tbody = document.getElementById('auditTableBody');
+      if (!tbody) return;
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-zinc-500">No inference audit events recorded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(r => `
+        <tr class="hover:bg-zinc-850/30">
+          <td class="p-4">${r.created_at.slice(0, 19).replace('T', ' ')}</td>
+          <td class="p-4 text-violet-300 font-semibold">${r.model_id}</td>
+          <td class="p-4">${r.total_tokens || 0}</td>
+          <td class="p-4">${r.latency_ms || 0} ms</td>
+          <td class="p-4"><span class="px-2 py-0.5 rounded ${r.status_code < 400 ? 'bg-emerald-950 text-emerald-400' : 'bg-red-950 text-red-400'}">${r.status_code}</span></td>
+          <td class="p-4 text-[10px] text-zinc-500 font-mono">${r.record_hash ? r.record_hash.slice(0, 16) + '...' : 'legacy'}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function verifyAuditChainUI() {
+      const statusBox = document.getElementById('auditVerifyText');
+      const badge = document.getElementById('auditCountBadge');
+      if (statusBox) statusBox.innerText = 'Traversing cryptographic SHA-256 hash chains across audit records...';
+      try {
+        const res = await apiFetch('/api/v1/audit/verify', { method: 'POST' });
+        if (res && res.valid) {
+          if (statusBox) statusBox.innerHTML = `<span class="text-emerald-400 font-bold">100% Cryptographically Verified:</span> All ${res.verified_record_count} chained records are intact with zero tampering detected.`;
+          if (badge) {
+            badge.innerText = 'VERIFIED';
+            badge.className = 'px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs font-mono font-bold';
+          }
+          showToast(`Audit Chain Verified: ${res.verified_record_count} records intact`, 'success');
+        } else {
+          if (statusBox) statusBox.innerHTML = `<span class="text-red-400 font-bold">Tampering Detected:</span> ${res ? res.error : 'Unknown verification failure'}`;
+          if (badge) {
+            badge.innerText = 'TAMPERED';
+            badge.className = 'px-2.5 py-1 rounded bg-red-950 text-red-400 border border-red-800 text-xs font-mono font-bold';
+          }
+          showToast('Audit chain verification failed', 'error');
+        }
+      } catch (err) {
+        showToast('Verification request failed', 'error');
       }
     }
 

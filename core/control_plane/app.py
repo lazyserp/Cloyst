@@ -8,7 +8,8 @@ load_dotenv()
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
+from core.observability.metrics import global_metrics
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -31,6 +32,7 @@ from core.db.models import (
     NodeRecord,
     ProjectRecord,
 )
+from core.config import settings
 from core.db.session import get_db, init_db
 from core.security.keys import generate_api_key
 
@@ -45,9 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-load_dotenv()
-
-CLOYST_ADMIN_TOKEN = os.environ.get("CLOYST_ADMIN_TOKEN") or "devkey"
+CLOYST_ADMIN_TOKEN = settings.cloyst_admin_token
 admin_bearer_scheme = HTTPBearer(auto_error=False)
 
 def verify_admin_token(
@@ -60,7 +60,8 @@ def verify_admin_token(
             detail="Missing Authorization header. Expected 'Bearer <admin_token>'.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    if not secrets.compare_digest(credentials.credentials, CLOYST_ADMIN_TOKEN):
+    expected_token = settings.cloyst_admin_token
+    if not secrets.compare_digest(credentials.credentials, expected_token):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Forbidden: Invalid admin token.",
@@ -260,6 +261,29 @@ def list_audit_logs(limit: int = 100, db: Session = Depends(get_db)):
         }
         for r in records
     ]
+
+
+@app.post("/api/v1/audit/verify", dependencies=[Depends(verify_admin_token)])
+@app.get("/api/v1/audit/verify", dependencies=[Depends(verify_admin_token)])
+def verify_audit_log_endpoint(db: Session = Depends(get_db)):
+    """Cryptographically verify the immutable hash-chain across all stored audit records."""
+    from core.security.audit import verify_audit_chain
+    valid, count, err = verify_audit_chain(db)
+    return {
+        "valid": valid,
+        "verified_record_count": count,
+        "error": err,
+    }
+
+
+@app.get("/api/v1/settings/airgap", dependencies=[Depends(verify_admin_token)])
+def get_airgap_settings():
+    """Retrieve air-gap mode, egress allowlist, and runtime boundary status."""
+    return {
+        "air_gap_mode": settings.air_gap_mode,
+        "egress_allowlist": settings.egress_allowlist,
+        "environment": settings.cloyst_env,
+    }
 
 
 @app.get("/api/v1/metrics/overview", dependencies=[Depends(verify_admin_token)])
@@ -462,9 +486,20 @@ def discover_ollama_models(port: int = 11434, host: str = "127.0.0.1"):
         return []
 
 
+from fastapi.staticfiles import StaticFiles
+
 CONSOLE_FILE_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "console", "index.html")
 )
+STATIC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "console"))
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def control_plane_metrics():
+    """Prometheus exposition metrics."""
+    return global_metrics.generate_prometheus_text()
 
 
 @app.get("/", response_class=HTMLResponse)
