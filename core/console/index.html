@@ -64,6 +64,19 @@
 
     <!-- Actions -->
     <div class="flex items-center space-x-3 text-sm">
+      <div class="flex items-center space-x-2">
+        <input
+          id="adminTokenInput"
+          type="password"
+          placeholder="Admin Token"
+          aria-label="Admin Token"
+          onkeydown="if (event.key === 'Enter') saveToken()"
+          class="w-56 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600"
+        />
+        <button onclick="saveToken()" class="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-200 hover:text-white transition-colors">
+          Save Token
+        </button>
+      </div>
       <button onclick="fetchCurrentTabData()" class="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-white transition-colors" title="Refresh Live Data">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
       </button>
