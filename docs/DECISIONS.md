@@ -55,3 +55,4 @@
   3. Because modern LLM inference latency is dominated by GPU compute (50ms - 5000ms), a 1ms gateway overhead represents < 0.1% of total request time.
   4. Retaining Python for both control plane and gateway provides unified model adapters, NumPy/Torch integration, and rapid extensibility for local GPU engines (vLLM, Ollama, llama.cpp).
   5. Future scaling beyond 20k RPS on a single edge node can introduce a Rust reverse-proxy sidecar without altering the control plane API.
+

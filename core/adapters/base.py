@@ -256,3 +256,4 @@ class AdapterRegistry:
 
 
 adapter_registry = AdapterRegistry()
+

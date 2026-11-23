@@ -105,3 +105,4 @@ def downgrade() -> None:
     op.drop_table('deployments')
     op.drop_table('models')
     op.drop_table('nodes')
+

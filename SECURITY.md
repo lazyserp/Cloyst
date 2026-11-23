@@ -15,3 +15,4 @@ Cloyst takes security and air-gap integrity seriously. If you discover a vulnera
 - **Secret Management**: Weak and default secrets ("devkey", "admin", "password", "cloyst-master-secret-2026") are refused at startup in production environments.
 - **Cryptographic Keys**: API keys are hashed using HMAC-SHA256 with a unique server pepper and validated using constant-time comparisons.
 - **Audit Logging**: Inference events are recorded with cryptographic hash chains to ensure tamper-evidence.
+
