@@ -6,7 +6,7 @@ Cloyst is a lightweight, production-grade private inference platform that turns 
 
 ---
 
-## ⚡ Key Capabilities
+## Key Capabilities
 
 * **Unified AI Gateway (`:8000`)**:
   * Drop-in OpenAI-compatible (`/v1/chat/completions`) and Anthropic-compatible (`/v1/messages`) routing.
@@ -28,7 +28,7 @@ Cloyst is a lightweight, production-grade private inference platform that turns 
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
 ```text
                +-----------------------------------------+
@@ -67,7 +67,7 @@ Cloyst is a lightweight, production-grade private inference platform that turns 
 
 ---
 
-## 🚀 Quickstart (Under 60 Seconds)
+## Quickstart (Under 60 Seconds)
 
 ### 1. Launch with Docker Compose
 
@@ -121,7 +121,7 @@ print(response.choices[0].message.content)
 
 ---
 
-## 🛠 Running the Node Agent Daemon
+## Running the Node Agent Daemon
 
 On remote GPU nodes (NVIDIA or Mac):
 
@@ -133,7 +133,7 @@ python scripts/run_agent.py \
 
 ---
 
-## 🧪 Testing
+## Testing
 
 Run unit and integration test suites:
 
@@ -143,6 +143,6 @@ pytest tests/
 
 ---
 
-## 📄 License
+## License
 
 Apache 2.0 / MIT
