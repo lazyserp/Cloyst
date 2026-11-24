@@ -10,10 +10,7 @@ Validates:
 """
 from __future__ import annotations
 
-import asyncio
-import os
 import sys
-import time
 from pathlib import Path
 
 # Ensure repo root is on sys.path
@@ -25,13 +22,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from core.config import settings
-from core.db.models import ApiKeyRecord, Base, DeploymentRecord, ModelRecord, NodeRecord
+from core.db.models import ApiKeyRecord, DeploymentRecord, NodeRecord
 from core.db.session import init_db
 from core.gateway.app import app
 from core.routing.router import global_router
 from core.security.audit import verify_audit_chain
 from core.security.egress import global_egress_guard
-from core.security.keys import generate_api_key, hash_key
+from core.security.keys import generate_api_key
 from core.storage.models import model_registry
 
 
