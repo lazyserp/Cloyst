@@ -10,14 +10,15 @@ Provides parity with the admin API and offline management commands:
 from __future__ import annotations
 
 import argparse
-import json
+import os
+import secrets
+import subprocess
 import sys
-from pathlib import Path
 
 from core.bundle.manager import BundleManager
 from core.db.session import SessionLocal, init_db
 from core.security.audit import verify_audit_chain
-from core.security.keys import generate_api_key, verify_api_key
+from core.security.keys import generate_api_key
 from core.storage.models import model_registry
 
 
@@ -97,9 +98,60 @@ def cmd_models_import(args):
     print(f"   Path:       {manifest['artifact_path']}")
 
 
+def cmd_up(args):
+    """One-shot launcher for both Control Plane (:8001) and AI Gateway (:8000)."""
+    token = args.token or os.getenv("CLOYST_ADMIN_TOKEN") or f"cloyst_{secrets.token_hex(12)}"
+    env = os.environ.copy()
+    env["CLOYST_ADMIN_TOKEN"] = token
+
+    host = args.host
+    cp_port = str(args.console_port)
+    gw_port = str(args.gateway_port)
+
+    print("=" * 64)
+    print("  Cloyst — Private AI Control Plane & Gateway")
+    print("=" * 64)
+    print(f"  Console UI  : http://{host}:{cp_port}")
+    print(f"  AI Gateway  : http://{host}:{gw_port}/v1")
+    print(f"  Admin Token : {token}")
+    print("  Press Ctrl+C to stop both services.")
+    print("=" * 64)
+
+    cp_proc = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "core.control_plane.app:app", "--host", host, "--port", cp_port],
+        env=env,
+    )
+    gw_proc = subprocess.Popen(
+        [sys.executable, "-m", "uvicorn", "core.gateway.app:app", "--host", host, "--port", gw_port],
+        env=env,
+    )
+
+    try:
+        cp_proc.wait()
+    except KeyboardInterrupt:
+        print("\nShutting down Cloyst services...")
+    finally:
+        for proc in (cp_proc, gw_proc):
+            if proc.poll() is None:
+                proc.terminate()
+        for proc in (cp_proc, gw_proc):
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+
+
 def main():
     parser = argparse.ArgumentParser(prog="cloyst", description="Cloyst AI Control Plane & Gateway CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # up (one-shot launcher)
+    p_up = subparsers.add_parser("up", help="Start Control Plane and AI Gateway in one command")
+    p_up.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    p_up.add_argument("--console-port", type=int, default=8001, help="Control Plane / UI port (default: 8001)")
+    p_up.add_argument("--gateway-port", type=int, default=8000, help="AI Gateway port (default: 8000)")
+    p_up.add_argument("--token", default=None, help="Admin token (auto-generated if omitted)")
+    p_up.set_defaults(func=cmd_up)
 
     # bundle
     p_bundle = subparsers.add_parser("bundle", help="Manage signed offline bundles")
