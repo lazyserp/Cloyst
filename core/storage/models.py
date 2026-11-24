@@ -7,8 +7,7 @@ import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from sqlalchemy import select
+from typing import Any, Dict, Optional
 from sqlalchemy.orm import Session
 
 from core.db.models import ModelRecord
