@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 
 def openai_to_anthropic_request(openai_req: Dict[str, Any]) -> Dict[str, Any]:
