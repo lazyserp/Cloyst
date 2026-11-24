@@ -10,7 +10,6 @@ Measures:
 from __future__ import annotations
 
 import json
-import os
 import sys
 import time
 from pathlib import Path
@@ -25,10 +24,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from core.db.models import ApiKeyRecord, Base, DeploymentRecord, ModelRecord, NodeRecord
+from core.db.models import ApiKeyRecord, DeploymentRecord, ModelRecord, NodeRecord
 from core.db.session import init_db
 from core.gateway.app import app
-from core.security.keys import generate_api_key, hash_key
+from core.security.keys import hash_key
 
 BENCH_API_KEY = "cloyst_sk_live_bench_key_123456789"
 
