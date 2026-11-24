@@ -2,13 +2,10 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from core.cli import cmd_audit_verify, cmd_bundle_create, cmd_bundle_verify
-from core.db.models import Base
 from core.db.session import init_db
 from core.migration.litellm import LiteLLMImporter
 from core.storage.models import compute_directory_provenance_hash, model_registry
