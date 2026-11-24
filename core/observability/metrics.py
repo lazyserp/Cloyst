@@ -1,7 +1,6 @@
 """Prometheus Metrics Exporter with Bounded Cardinality for Cloyst Gateway."""
 from __future__ import annotations
 
-import time
 from typing import Dict
 
 
