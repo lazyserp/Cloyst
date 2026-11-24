@@ -1,17 +1,16 @@
 import os
 import pytest
-from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from core.config import Settings, WEAK_SECRETS
-from core.db.models import ApiKeyRecord, AuditLogRecord, Base
+from core.config import Settings
+from core.db.models import ApiKeyRecord, Base
 from core.db.session import init_db
 from core.logging import redact_secrets
-from core.security.audit import compute_audit_hash, record_audit_entry, verify_audit_chain, GENESIS_HASH
-from core.security.keys import generate_api_key, hash_key, invalidate_key_cache, verify_api_key
+from core.security.audit import record_audit_entry, verify_audit_chain, GENESIS_HASH
+from core.security.keys import generate_api_key, invalidate_key_cache, verify_api_key
 from core.gateway.app import app
 
 
