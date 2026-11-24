@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 import httpx
-import pytest
 
 from core.agents.client import NodeAgent
 from core.preflight.models import CheckItem, PreflightResult
