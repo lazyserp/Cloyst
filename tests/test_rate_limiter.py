@@ -1,6 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
 import time
-import pytest
 
 from core.gateway.limiter import InMemoryRateLimiter, TokenBucket
 
